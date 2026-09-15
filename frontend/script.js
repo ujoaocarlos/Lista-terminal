@@ -40,6 +40,21 @@ const elements = {
     financeExpenses: document.getElementById("financeExpenses"),
     financeIncomeCount: document.getElementById("financeIncomeCount"),
     financeExpenseCount: document.getElementById("financeExpenseCount")
+    ,dashboardPeriod: document.getElementById("dashboardPeriod")
+    ,dailyAverage: document.getElementById("dailyAverage")
+    ,dailyAverageNote: document.getElementById("dailyAverageNote")
+    ,topCategory: document.getElementById("topCategory")
+    ,topCategoryAmount: document.getElementById("topCategoryAmount")
+    ,topExpense: document.getElementById("topExpense")
+    ,topExpenseAmount: document.getElementById("topExpenseAmount")
+    ,trendChart: document.getElementById("trendChart")
+    ,trendLabels: document.getElementById("trendLabels")
+    ,comparisonLabel: document.getElementById("comparisonLabel")
+    ,comparisonValue: document.getElementById("comparisonValue")
+    ,comparisonDirection: document.getElementById("comparisonDirection")
+    ,comparisonBar: document.getElementById("comparisonBar")
+    ,currentMonthSpent: document.getElementById("currentMonthSpent")
+    ,previousMonthSpent: document.getElementById("previousMonthSpent")
 };
 
 const counts = {
@@ -471,6 +486,69 @@ function renderFinance() {
 
     renderCategoryChart(monthTransactions);
     renderTransactionList(monthTransactions);
+    renderDashboard(month, monthTransactions);
+}
+
+function renderDashboard(month, monthTransactions) {
+    const monthDate = parseMonthKey(month);
+    const monthName = monthDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    elements.dashboardPeriod.textContent = capitalize(monthName);
+
+    const expenses = monthTransactions.filter((item) => item.type === "expense");
+    const expenseTotal = sumTransactions(monthTransactions, "expense");
+    const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+    const categoryTotals = expenses.reduce((result, item) => {
+        result[item.category] = (result[item.category] || 0) + item.amount;
+        return result;
+    }, {});
+    const topCategory = Object.entries(categoryTotals).sort((first, second) => second[1] - first[1])[0];
+    const topExpense = expenses.slice().sort((first, second) => second.amount - first.amount)[0];
+
+    elements.dailyAverage.textContent = formatMoney(expenseTotal / daysInMonth);
+    elements.dailyAverageNote.textContent = `Em ${daysInMonth} dias do mês`;
+    elements.topCategory.textContent = topCategory?.[0] || "Nenhuma";
+    elements.topCategoryAmount.textContent = formatMoney(topCategory?.[1] || 0);
+    elements.topExpense.textContent = topExpense?.description || "Nenhuma";
+    elements.topExpenseAmount.textContent = formatMoney(topExpense?.amount || 0);
+
+    renderTrendChart(month);
+    renderMonthComparison(month, expenseTotal);
+}
+
+function renderTrendChart(selectedMonth) {
+    const months = [];
+    const selectedDate = parseMonthKey(selectedMonth);
+    for (let offset = 5; offset >= 0; offset -= 1) {
+        const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - offset, 1);
+        const key = monthKey(date);
+        months.push({
+            key,
+            label: date.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
+            total: sumTransactions(transactions.filter((item) => item.date.startsWith(key)), "expense")
+        });
+    }
+    const highest = Math.max(...months.map((item) => item.total), 1);
+    elements.trendChart.innerHTML = months.map((item) => `<div class="trend-column" title="${item.label}: ${formatMoney(item.total)}"><span class="trend-value">${item.total ? formatMoney(item.total) : ""}</span><div class="trend-bar ${item.key === selectedMonth ? "selected" : ""}"><span style="height: ${item.total ? Math.max((item.total / highest) * 100, 5) : 3}%"></span></div></div>`).join("");
+    elements.trendLabels.innerHTML = months.map((item) => `<span>${item.label}</span>`).join("");
+}
+
+function renderMonthComparison(month, currentTotal) {
+    const selectedDate = parseMonthKey(month);
+    const previousMonth = monthKey(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1));
+    const previousTotal = sumTransactions(transactions.filter((item) => item.date.startsWith(previousMonth)), "expense");
+    const variation = previousTotal ? ((currentTotal - previousTotal) / previousTotal) * 100 : 0;
+    const roundedVariation = Math.round(Math.abs(variation));
+    const hasComparison = previousTotal > 0 || currentTotal > 0;
+
+    elements.comparisonLabel.textContent = previousTotal ? `Em relação a ${formatMonthLabel(previousMonth)}.` : "Ainda não há despesas no mês anterior.";
+    elements.comparisonValue.textContent = previousTotal ? `${variation > 0 ? "+" : "-"}${roundedVariation}%` : "Novo";
+    elements.comparisonValue.classList.toggle("comparison-up", variation > 0);
+    elements.comparisonValue.classList.toggle("comparison-down", variation < 0);
+    elements.comparisonDirection.textContent = previousTotal ? variation > 0 ? "Você gastou mais" : variation < 0 ? "Você gastou menos" : "Mesmo valor" : "Sem comparação disponível";
+    elements.comparisonBar.style.width = `${hasComparison ? Math.min(previousTotal ? (currentTotal / Math.max(currentTotal, previousTotal)) * 100 : 100, 100) : 0}%`;
+    elements.comparisonBar.classList.toggle("comparison-warning", variation > 0);
+    elements.currentMonthSpent.textContent = `Este mês: ${formatMoney(currentTotal)}`;
+    elements.previousMonthSpent.textContent = `Anterior: ${formatMoney(previousTotal)}`;
 }
 
 function renderTransactionList(monthTransactions) {
@@ -580,6 +658,23 @@ function sumTransactions(items, type) {
 
 function currentMonthKey() {
     return todayKey().slice(0, 7);
+}
+
+function monthKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function parseMonthKey(value) {
+    const [year, month] = value.split("-").map(Number);
+    return new Date(year, month - 1, 1);
+}
+
+function formatMonthLabel(value) {
+    return capitalize(parseMonthKey(value).toLocaleDateString("pt-BR", { month: "long" }));
+}
+
+function capitalize(value) {
+    return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function formatMoney(value) {

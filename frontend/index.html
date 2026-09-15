@@ -141,6 +141,22 @@
                     <button class="secondary-button" id="exportFinance" type="button">Exportar CSV</button>
                 </div>
 
+                <section class="dashboard-section" aria-labelledby="dashboardTitle">
+                    <div class="section-heading dashboard-heading">
+                        <div><p class="eyebrow">Visão geral</p><h2 id="dashboardTitle">Dashboard de gastos</h2><p>Entenda seus hábitos e acompanhe a evolução do seu dinheiro.</p></div>
+                        <span class="dashboard-period" id="dashboardPeriod">Setembro de 2026</span>
+                    </div>
+                    <div class="dashboard-kpis">
+                        <article><span>Gasto médio por dia</span><strong id="dailyAverage">R$ 0,00</strong><small id="dailyAverageNote">Considerando os dias do mês</small></article>
+                        <article><span>Maior categoria</span><strong id="topCategory">Nenhuma</strong><small id="topCategoryAmount">R$ 0,00</small></article>
+                        <article><span>Maior despesa</span><strong id="topExpense">Nenhuma</strong><small id="topExpenseAmount">R$ 0,00</small></article>
+                    </div>
+                    <div class="dashboard-grid">
+                        <section class="dashboard-panel trend-panel"><div class="section-heading"><div><h3>Evolução mensal</h3><p>Despesas dos últimos seis meses.</p></div></div><div class="trend-chart" id="trendChart"></div><div class="trend-labels" id="trendLabels"></div></section>
+                        <section class="dashboard-panel comparison-panel"><div class="section-heading"><div><h3>Comparativo com o mês anterior</h3><p id="comparisonLabel">Sem dados anteriores.</p></div></div><div class="comparison-value"><strong id="comparisonValue">0%</strong><span id="comparisonDirection">Sem variação</span></div><div class="comparison-track"><span id="comparisonBar"></span></div><div class="comparison-meta"><span id="currentMonthSpent">Este mês: R$ 0,00</span><span id="previousMonthSpent">Anterior: R$ 0,00</span></div></section>
+                    </div>
+                </section>
+
                 <section class="finance-overview" aria-label="Resumo financeiro">
                     <article class="money-card"><span>Saldo do mês</span><strong id="financeBalance">R$ 0,00</strong><small id="financeBalanceNote">Entradas menos despesas</small></article>
                     <article class="money-card positive"><span>Entradas</span><strong id="financeIncome">R$ 0,00</strong><small id="financeIncomeCount">0 lançamentos</small></article>
