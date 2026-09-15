@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f5f5f2">
+    <title>Minha lista | Tarefas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Navegação da lista">
+            <a class="brand" href="#" aria-label="Minha lista, início">
+                <span class="brand-mark" aria-hidden="true">M</span>
+                <span>
+                    <strong>Minha lista</strong>
+                    <small>organize o que importa</small>
+                </span>
+            </a>
+
+            <nav class="filter-nav" aria-label="Filtrar tarefas">
+                <p class="eyebrow">Meu espaço</p>
+                <button class="nav-item app-nav active" type="button" data-view="tasks">
+                    <span>Tarefas</span>
+                    <span class="nav-count">M</span>
+                </button>
+                <button class="nav-item app-nav" type="button" data-view="finance">
+                    <span>Finanças pessoais</span>
+                    <span class="nav-count">R$</span>
+                </button>
+            </nav>
+
+            <nav class="filter-nav task-filters" aria-label="Filtrar tarefas">
+                <p class="eyebrow">Tarefas</p>
+                <button class="nav-item active" type="button" data-filter="today">
+                    <span>Hoje</span>
+                    <span class="nav-count" id="todayCount">0</span>
+                </button>
+                <button class="nav-item" type="button" data-filter="upcoming">
+                    <span>Próximas</span>
+                    <span class="nav-count" id="upcomingCount">0</span>
+                </button>
+                <button class="nav-item" type="button" data-filter="completed">
+                    <span>Concluídas</span>
+                    <span class="nav-count" id="completedCount">0</span>
+                </button>
+                <button class="nav-item" type="button" data-filter="all">
+                    <span>Todas</span>
+                    <span class="nav-count" id="allCount">0</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="completion-summary">
+                    <div>
+                        <span class="eyebrow">Progresso da semana</span>
+                        <strong id="progressText">0%</strong>
+                    </div>
+                    <div class="progress-track" aria-hidden="true">
+                        <span id="progressBar"></span>
+                    </div>
+                    <small id="progressMessage">Nenhuma tarefa concluída ainda.</small>
+                </div>
+                <button class="theme-toggle" id="themeToggle" type="button" aria-label="Ativar modo escuro">
+                    <span class="theme-icon" aria-hidden="true">◐</span>
+                    <span>Alternar tema</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header tasks-view">
+                <div>
+                    <p class="eyebrow" id="currentDate">quinta-feira, 10 de setembro</p>
+                    <h1 id="pageTitle">Hoje</h1>
+                    <p class="page-subtitle" id="pageSubtitle">O que precisa da sua atenção.</p>
+                </div>
+                <button class="primary-button header-add" id="openTaskModal" type="button">
+                    <span aria-hidden="true">+</span>
+                    Nova tarefa
+                </button>
+            </header>
+
+            <section class="overview" aria-label="Resumo das tarefas">
+                <article class="overview-item">
+                    <span class="overview-label">Em aberto</span>
+                    <strong id="openTotal">0</strong>
+                </article>
+                <article class="overview-item">
+                    <span class="overview-label">Para hoje</span>
+                    <strong id="todayTotal">0</strong>
+                </article>
+                <article class="overview-item">
+                    <span class="overview-label">Feitas</span>
+                    <strong id="doneTotal">0</strong>
+                </article>
+            </section>
+
+            <section class="quick-add" aria-label="Adicionar tarefa rapidamente">
+                <span class="quick-add-mark" aria-hidden="true">+</span>
+                <input id="quickTaskInput" type="text" placeholder="Adicionar uma tarefa rápida..." maxlength="120">
+                <button id="quickAddButton" type="button">Adicionar</button>
+            </section>
+
+            <section class="tasks-section" aria-labelledby="listTitle">
+                <div class="section-heading">
+                    <div>
+                        <h2 id="listTitle">Tarefas de hoje</h2>
+                        <p id="listHint">Uma coisa de cada vez.</p>
+                    </div>
+                    <button class="text-button" id="clearCompleted" type="button">Limpar concluídas</button>
+                </div>
+                <div class="task-list" id="taskList"></div>
+                <div class="empty-state" id="emptyState" hidden>
+                    <div class="empty-mark" aria-hidden="true">—</div>
+                    <h2 id="emptyTitle">Nada por aqui.</h2>
+                    <p id="emptyMessage">Adicione uma tarefa para começar a organizar o seu dia.</p>
+                    <button class="secondary-button" id="emptyAddButton" type="button">Criar tarefa</button>
+                </div>
+            </section>
+
+            <section class="finance-view" id="financeView" hidden>
+                <header class="page-header finance-header">
+                    <div>
+                        <p class="eyebrow" id="financeDateLabel">Meu dinheiro</p>
+                        <h1>Finanças pessoais</h1>
+                        <p class="page-subtitle">Tenha clareza sobre o que entra, sai e fica para você.</p>
+                    </div>
+                    <button class="primary-button header-add" id="openFinanceModal" type="button">
+                        <span aria-hidden="true">+</span>
+                        Novo lançamento
+                    </button>
+                </header>
+
+                <div class="finance-toolbar">
+                    <label class="month-picker" for="financeMonth">Mês de consulta
+                        <input class="field-input" id="financeMonth" type="month">
+                    </label>
+                    <button class="secondary-button" id="exportFinance" type="button">Exportar CSV</button>
+                </div>
+
+                <section class="finance-overview" aria-label="Resumo financeiro">
+                    <article class="money-card"><span>Saldo do mês</span><strong id="financeBalance">R$ 0,00</strong><small id="financeBalanceNote">Entradas menos despesas</small></article>
+                    <article class="money-card positive"><span>Entradas</span><strong id="financeIncome">R$ 0,00</strong><small id="financeIncomeCount">0 lançamentos</small></article>
+                    <article class="money-card negative"><span>Despesas</span><strong id="financeExpenses">R$ 0,00</strong><small id="financeExpenseCount">0 lançamentos</small></article>
+                </section>
+
+                <div class="finance-grid">
+                    <section class="finance-panel budget-panel">
+                        <div class="section-heading">
+                            <div><h2>Orçamento mensal</h2><p>Defina um limite para suas despesas.</p></div>
+                        </div>
+                        <div class="budget-entry"><input class="field-input" id="budgetInput" type="number" min="0" step="0.01" placeholder="Quanto você pode gastar?"><button class="secondary-button" id="saveBudget" type="button">Salvar</button></div>
+                        <div class="budget-summary"><strong id="budgetSpent">R$ 0,00</strong><span id="budgetLimit">de R$ 0,00</span></div>
+                        <div class="progress-track budget-track"><span id="budgetBar"></span></div>
+                        <small id="budgetMessage">Defina seu orçamento para acompanhar seu limite.</small>
+                    </section>
+                    <section class="finance-panel category-panel">
+                        <div class="section-heading"><div><h2>Despesas por categoria</h2><p>Onde seu dinheiro está indo.</p></div></div>
+                        <div id="categoryChart" class="category-chart"></div>
+                    </section>
+                </div>
+
+                <section class="finance-panel transactions-panel">
+                    <div class="section-heading">
+                        <div><h2>Lançamentos do mês</h2><p>Registre cada entrada e saída para manter o controle.</p></div>
+                        <select class="field-input transaction-filter" id="transactionTypeFilter" aria-label="Filtrar lançamentos">
+                            <option value="all">Todos</option><option value="income">Entradas</option><option value="expense">Despesas</option>
+                        </select>
+                    </div>
+                    <div id="transactionList" class="transaction-list"></div>
+                    <div class="empty-state" id="financeEmptyState" hidden><div class="empty-mark" aria-hidden="true">R$</div><h2>Nenhum lançamento neste mês.</h2><p>Adicione suas receitas e despesas para começar.</p><button class="secondary-button" id="emptyFinanceAdd" type="button">Adicionar lançamento</button></div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <div class="modal-backdrop" id="financeModal" hidden>
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="financeModalTitle">
+            <div class="modal-header"><div><p class="eyebrow">Finanças pessoais</p><h2 id="financeModalTitle">Novo lançamento</h2></div><button class="close-button" id="closeFinanceModal" type="button" aria-label="Fechar">×</button></div>
+            <form id="financeForm">
+                <label class="field-label" for="financeDescription">Descrição <span>*</span></label>
+                <input class="field-input" id="financeDescription" name="description" type="text" maxlength="100" placeholder="Ex.: mercado, salário, aluguel" required>
+                <div class="form-grid"><div><label class="field-label" for="financeAmount">Valor <span>*</span></label><input class="field-input" id="financeAmount" name="amount" type="number" min="0.01" step="0.01" required></div><div><label class="field-label" for="financeType">Tipo</label><select class="field-input" id="financeType" name="type"><option value="expense">Despesa</option><option value="income">Entrada</option></select></div></div>
+                <div class="form-grid"><div><label class="field-label" for="financeDate">Data</label><input class="field-input" id="financeDate" name="date" type="date" required></div><div><label class="field-label" for="financeCategory">Categoria</label><select class="field-input" id="financeCategory" name="category"><option>Moradia</option><option>Alimentação</option><option>Transporte</option><option>Saúde</option><option>Lazer</option><option>Educação</option><option>Contas</option><option>Compras</option><option>Salário</option><option>Freelance</option><option>Outros</option></select></div></div>
+                <label class="field-label" for="financePayment">Forma de pagamento <small>opcional</small></label><input class="field-input" id="financePayment" name="payment" type="text" maxlength="40" placeholder="Pix, cartão, dinheiro...">
+                <div class="modal-actions"><button class="secondary-button" id="cancelFinance" type="button">Cancelar</button><button class="primary-button" type="submit">Salvar lançamento</button></div>
+            </form>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="taskModal" hidden>
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-header">
+                <div>
+                    <p class="eyebrow">Nova tarefa</p>
+                    <h2 id="modalTitle">O que precisa ser feito?</h2>
+                </div>
+                <button class="close-button" id="closeTaskModal" type="button" aria-label="Fechar">×</button>
+            </div>
+            <form id="taskForm">
+                <label class="field-label" for="taskTitle">Título <span>*</span></label>
+                <input class="field-input" id="taskTitle" name="title" type="text" maxlength="120" required autofocus>
+
+                <label class="field-label" for="taskDescription">Descrição <small>opcional</small></label>
+                <textarea class="field-input" id="taskDescription" name="description" rows="3" maxlength="300" placeholder="Algum detalhe que ajude?"></textarea>
+
+                <div class="form-grid">
+                    <div>
+                        <label class="field-label" for="taskDueDate">Vencimento</label>
+                        <input class="field-input" id="taskDueDate" name="dueDate" type="date">
+                    </div>
+                    <div>
+                        <label class="field-label" for="taskPriority">Prioridade</label>
+                        <select class="field-input" id="taskPriority" name="priority">
+                            <option value="normal">Normal</option>
+                            <option value="high">Alta</option>
+                            <option value="low">Baixa</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label class="field-label" for="taskTags">Tags <small>separe por vírgula</small></label>
+                <input class="field-input" id="taskTags" name="tags" type="text" maxlength="80" placeholder="trabalho, pessoal">
+
+                <div class="modal-actions">
+                    <button class="secondary-button" id="cancelTask" type="button">Cancelar</button>
+                    <button class="primary-button" type="submit">Salvar tarefa</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <div class="toast" id="notification" role="status" aria-live="polite"></div>
+    <script src="script.js"></script>
+</body>
+
+</html>
