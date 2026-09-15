@@ -39,22 +39,22 @@ const elements = {
     financeIncome: document.getElementById("financeIncome"),
     financeExpenses: document.getElementById("financeExpenses"),
     financeIncomeCount: document.getElementById("financeIncomeCount"),
-    financeExpenseCount: document.getElementById("financeExpenseCount")
-    ,dashboardPeriod: document.getElementById("dashboardPeriod")
-    ,dailyAverage: document.getElementById("dailyAverage")
-    ,dailyAverageNote: document.getElementById("dailyAverageNote")
-    ,topCategory: document.getElementById("topCategory")
-    ,topCategoryAmount: document.getElementById("topCategoryAmount")
-    ,topExpense: document.getElementById("topExpense")
-    ,topExpenseAmount: document.getElementById("topExpenseAmount")
-    ,trendChart: document.getElementById("trendChart")
-    ,trendLabels: document.getElementById("trendLabels")
-    ,comparisonLabel: document.getElementById("comparisonLabel")
-    ,comparisonValue: document.getElementById("comparisonValue")
-    ,comparisonDirection: document.getElementById("comparisonDirection")
-    ,comparisonBar: document.getElementById("comparisonBar")
-    ,currentMonthSpent: document.getElementById("currentMonthSpent")
-    ,previousMonthSpent: document.getElementById("previousMonthSpent")
+    financeExpenseCount: document.getElementById("financeExpenseCount"),
+    dashboardPeriod: document.getElementById("dashboardPeriod"),
+    dailyAverage: document.getElementById("dailyAverage"),
+    dailyAverageNote: document.getElementById("dailyAverageNote"),
+    topCategory: document.getElementById("topCategory"),
+    topCategoryAmount: document.getElementById("topCategoryAmount"),
+    topExpense: document.getElementById("topExpense"),
+    topExpenseAmount: document.getElementById("topExpenseAmount"),
+    trendChart: document.getElementById("trendChart"),
+    trendLabels: document.getElementById("trendLabels"),
+    comparisonLabel: document.getElementById("comparisonLabel"),
+    comparisonValue: document.getElementById("comparisonValue"),
+    comparisonDirection: document.getElementById("comparisonDirection"),
+    comparisonBar: document.getElementById("comparisonBar"),
+    currentMonthSpent: document.getElementById("currentMonthSpent"),
+    previousMonthSpent: document.getElementById("previousMonthSpent")
 };
 
 const counts = {
@@ -66,6 +66,25 @@ const counts = {
     todayTotal: document.getElementById("todayTotal"),
     done: document.getElementById("doneTotal")
 };
+
+const authElements = {
+    screen: document.getElementById("authScreen"),
+    form: document.getElementById("authForm"),
+    title: document.getElementById("authTitle"),
+    subtitle: document.getElementById("authSubtitle"),
+    email: document.getElementById("authEmail"),
+    password: document.getElementById("authPassword"),
+    submit: document.getElementById("authSubmit"),
+    message: document.getElementById("authMessage"),
+    toggle: document.getElementById("toggleAuthMode"),
+    forgot: document.getElementById("forgotPassword"),
+    setup: document.getElementById("authSetup"),
+    logout: document.getElementById("logoutButton")
+};
+
+const supabaseConfig = window.SUPABASE_CONFIG || {};
+const hasSupabaseConfig = Boolean(window.supabase && supabaseConfig.url && supabaseConfig.anonKey && !supabaseConfig.url.startsWith("COLE_"));
+const supabaseClient = hasSupabaseConfig ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey) : null;
 
 let tasks = loadTasks();
 let transactions = loadTransactions();
@@ -80,6 +99,7 @@ initializeDate();
 initializeEvents();
 render();
 renderFinance();
+initializeAuth();
 
 function loadTasks() {
     try {
@@ -175,6 +195,94 @@ function initializeEvents() {
     elements.transactionTypeFilter.addEventListener("change", renderFinance);
     document.getElementById("saveBudget").addEventListener("click", saveBudget);
     document.getElementById("exportFinance").addEventListener("click", exportFinance);
+    authElements.form.addEventListener("submit", handleAuthSubmit);
+    authElements.toggle.addEventListener("click", toggleAuthMode);
+    authElements.forgot.addEventListener("click", sendPasswordReset);
+    authElements.logout.addEventListener("click", logout);
+}
+
+async function initializeAuth() {
+    if (!supabaseClient) return;
+    authElements.screen.hidden = false;
+    document.querySelector(".app-shell").hidden = true;
+    authElements.setup.hidden = true;
+    const { data } = await supabaseClient.auth.getSession();
+    updateAuthState(data.session);
+    supabaseClient.auth.onAuthStateChange((_event, session) => updateAuthState(session));
+}
+
+function updateAuthState(session) {
+    const isAuthenticated = Boolean(session);
+    authElements.screen.hidden = isAuthenticated;
+    document.querySelector(".app-shell").hidden = !isAuthenticated;
+    authElements.logout.hidden = !isAuthenticated;
+    if (isAuthenticated) {
+        authElements.email.value = "";
+        authElements.password.value = "";
+    }
+}
+
+async function handleAuthSubmit(event) {
+    event.preventDefault();
+    if (!supabaseClient) {
+        showAuthMessage("Configure o Supabase em supabase-config.js antes de entrar.");
+        authElements.setup.hidden = false;
+        return;
+    }
+    setAuthBusy(true);
+    const email = authElements.email.value.trim();
+    const password = authElements.password.value;
+    const result = authMode === "login"
+        ? await supabaseClient.auth.signInWithPassword({ email, password })
+        : await supabaseClient.auth.signUp({ email, password });
+    setAuthBusy(false);
+    if (result.error) {
+        showAuthMessage(result.error.message);
+        return;
+    }
+    showAuthMessage(authMode === "login" ? "Login realizado." : "Conta criada. Confira seu e-mail para confirmar o cadastro.", "success");
+}
+
+let authMode = "login";
+
+function toggleAuthMode() {
+    authMode = authMode === "login" ? "signup" : "login";
+    const isSignup = authMode === "signup";
+    authElements.title.textContent = isSignup ? "Criar sua conta" : "Entrar na sua conta";
+    authElements.subtitle.textContent = isSignup ? "Crie seu espaço pessoal para sincronizar seus dados." : "Acesse suas tarefas e finanças de qualquer dispositivo.";
+    authElements.submit.textContent = isSignup ? "Criar conta" : "Entrar";
+    authElements.toggle.textContent = isSignup ? "Já tenho uma conta" : "Criar uma conta";
+    authElements.forgot.hidden = isSignup;
+    showAuthMessage("");
+}
+
+async function sendPasswordReset() {
+    if (!supabaseClient) {
+        showAuthMessage("Configure o Supabase antes de recuperar sua senha.");
+        return;
+    }
+    const email = authElements.email.value.trim();
+    if (!email) {
+        showAuthMessage("Informe seu e-mail para receber o link de recuperação.");
+        authElements.email.focus();
+        return;
+    }
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+    showAuthMessage(error ? error.message : "Confira seu e-mail para redefinir a senha.", error ? "" : "success");
+}
+
+async function logout() {
+    if (supabaseClient) await supabaseClient.auth.signOut();
+}
+
+function setAuthBusy(isBusy) {
+    authElements.submit.disabled = isBusy;
+    authElements.submit.textContent = isBusy ? "Aguarde..." : authMode === "login" ? "Entrar" : "Criar conta";
+}
+
+function showAuthMessage(message, type = "") {
+    authElements.message.textContent = message;
+    authElements.message.dataset.type = type;
 }
 
 function switchView(view) {

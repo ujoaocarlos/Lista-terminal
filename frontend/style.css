@@ -69,6 +69,80 @@ select:focus-visible {
     display: none !important;
 }
 
+.auth-screen {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    padding: 24px;
+    background: var(--bg);
+}
+
+.auth-card {
+    width: min(100%, 420px);
+    padding: 30px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.auth-brand {
+    display: inline-flex;
+}
+
+.auth-heading {
+    margin-top: 42px;
+}
+
+.auth-heading h1 {
+    margin-top: 7px;
+    font-size: 28px;
+    letter-spacing: -0.04em;
+}
+
+.auth-heading p:last-child {
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.auth-submit {
+    width: 100%;
+    margin-top: 23px;
+}
+
+.auth-submit:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.auth-message {
+    min-height: 18px;
+    margin-top: 13px;
+    color: var(--danger);
+    font-size: 11px;
+}
+
+.auth-message[data-type="success"] {
+    color: var(--accent);
+}
+
+.auth-links {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.auth-setup {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 10px;
+}
+
 .app-shell {
     display: flex;
     min-height: 100vh;
@@ -1187,6 +1261,14 @@ textarea.field-input {
 
     .main-content {
         padding: 30px 18px 44px;
+    }
+
+    .auth-card {
+        padding: 24px 20px;
+    }
+
+    .auth-heading {
+        margin-top: 32px;
     }
 
     .page-header {
