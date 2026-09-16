@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Minha lista</title>
+  <desc id="desc">Letra T com seta ascendente</desc>
+  <rect width="128" height="128" rx="28" fill="#2457d6"/>
+  <path d="M31 37h51a7 7 0 0 1 7 7v7H61v43a7 7 0 0 1-7 7h-8a7 7 0 0 1-7-7V51h-8a7 7 0 0 1 0-14Z" fill="#ffffff"/>
+  <path d="M27 91c16-17 31-26 49-34" fill="none" stroke="#dce7ff" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+  <path d="m67 48 19-5-5 19" fill="none" stroke="#dce7ff" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+</svg>

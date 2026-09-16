@@ -30,7 +30,16 @@ No Supabase, abra **Authentication > URL Configuration** e adicione:
 
 Para testar localmente, adicione tambem a URL usada pelo navegador.
 
-## 4. Publicar
+## 4. Ativar login com Google
+
+1. No Google Cloud Console, crie um OAuth Client ID do tipo **Web application**.
+2. No Supabase, abra **Authentication > Providers > Google** e ative o provedor.
+3. Cole o Client ID e o Client Secret fornecidos pelo Google.
+4. No Google Cloud, adicione como redirect URI a URL exibida pelo Supabase em **Authentication > Providers > Google**.
+
+O botao **Continuar com Google** usara automaticamente o usuario retornado pelo Supabase.
+
+## 5. Publicar
 
 ```powershell
 git add frontend/supabase-config.js SUPABASE_SETUP.md

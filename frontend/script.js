@@ -79,7 +79,8 @@ const authElements = {
     toggle: document.getElementById("toggleAuthMode"),
     forgot: document.getElementById("forgotPassword"),
     setup: document.getElementById("authSetup"),
-    logout: document.getElementById("logoutButton")
+    logout: document.getElementById("logoutButton"),
+    google: document.getElementById("googleAuth")
 };
 
 const supabaseConfig = window.SUPABASE_CONFIG || {};
@@ -89,6 +90,7 @@ const supabaseClient = hasSupabaseConfig ? window.supabase.createClient(supabase
 let tasks = loadTasks();
 let transactions = loadTransactions();
 let budgets = loadBudgets();
+let activeUserId = null;
 let currentFilter = "today";
 let currentView = "tasks";
 let editingTaskId = null;
@@ -103,7 +105,7 @@ initializeAuth();
 
 function loadTasks() {
     try {
-        const savedTasks = JSON.parse(localStorage.getItem("tarefas")) || [];
+        const savedTasks = JSON.parse(localStorage.getItem(storageKey("tarefas"))) || [];
         return savedTasks.map(normalizeTask);
     } catch {
         return [];
@@ -112,7 +114,7 @@ function loadTasks() {
 
 function loadTransactions() {
     try {
-        const saved = JSON.parse(localStorage.getItem("financas-pessoais")) || [];
+        const saved = JSON.parse(localStorage.getItem(storageKey("financas-pessoais"))) || [];
         return saved.map((item) => ({
             id: item.id || Date.now() + Math.random(),
             description: item.description || "Sem descrição",
@@ -129,7 +131,7 @@ function loadTransactions() {
 
 function loadBudgets() {
     try {
-        return JSON.parse(localStorage.getItem("orcamentos-pessoais")) || {};
+        return JSON.parse(localStorage.getItem(storageKey("orcamentos-pessoais"))) || {};
     } catch {
         return {};
     }
@@ -198,6 +200,7 @@ function initializeEvents() {
     authElements.form.addEventListener("submit", handleAuthSubmit);
     authElements.toggle.addEventListener("click", toggleAuthMode);
     authElements.forgot.addEventListener("click", sendPasswordReset);
+    authElements.google.addEventListener("click", signInWithGoogle);
     authElements.logout.addEventListener("click", logout);
 }
 
@@ -213,12 +216,22 @@ async function initializeAuth() {
 
 function updateAuthState(session) {
     const isAuthenticated = Boolean(session);
+    const nextUserId = session?.user?.id || null;
+    const userChanged = activeUserId !== nextUserId;
+    activeUserId = nextUserId;
     authElements.screen.hidden = isAuthenticated;
     document.querySelector(".app-shell").hidden = !isAuthenticated;
     authElements.logout.hidden = !isAuthenticated;
     if (isAuthenticated) {
         authElements.email.value = "";
         authElements.password.value = "";
+    }
+    if (userChanged) {
+        tasks = loadTasks();
+        transactions = loadTransactions();
+        budgets = loadBudgets();
+        render();
+        renderFinance();
     }
 }
 
@@ -237,10 +250,14 @@ async function handleAuthSubmit(event) {
         : await supabaseClient.auth.signUp({ email, password });
     setAuthBusy(false);
     if (result.error) {
-        showAuthMessage(result.error.message);
+        showAuthMessage(formatAuthError(result.error));
         return;
     }
-    showAuthMessage(authMode === "login" ? "Login realizado." : "Conta criada. Confira seu e-mail para confirmar o cadastro.", "success");
+    if (authMode === "signup" && !result.data.session) {
+        showAuthMessage("Conta criada. Confirme seu e-mail pelo link enviado pelo Supabase e depois entre.", "success");
+        return;
+    }
+    showAuthMessage("Login realizado.", "success");
 }
 
 let authMode = "login";
@@ -268,7 +285,44 @@ async function sendPasswordReset() {
         return;
     }
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
-    showAuthMessage(error ? error.message : "Confira seu e-mail para redefinir a senha.", error ? "" : "success");
+    showAuthMessage(error ? formatAuthError(error) : "Confira seu e-mail para redefinir a senha.", error ? "" : "success");
+}
+
+function formatAuthError(error) {
+    const message = `${error?.message || ""} ${error?.code || ""}`.toLowerCase();
+    if (message.includes("email not confirmed")) {
+        return "Seu e-mail ainda não foi confirmado. Abra a mensagem do Supabase e clique no link antes de entrar.";
+    }
+    if (message.includes("invalid login credentials")) {
+        return "E-mail ou senha incorretos. Confira os dados ou use 'Esqueci minha senha'.";
+    }
+    if (message.includes("user already registered")) {
+        return "Este e-mail já possui uma conta. Volte para Entrar ou use 'Esqueci minha senha'.";
+    }
+    if (message.includes("rate limit")) {
+        return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+    }
+    if (message.includes("redirect") || message.includes("origin")) {
+        return "A URL deste site ainda não está autorizada no Supabase. Confira Authentication > URL Configuration.";
+    }
+    return error?.message || "Não foi possível concluir a autenticação.";
+}
+
+async function signInWithGoogle() {
+    if (!supabaseClient) {
+        showAuthMessage("Configure o Supabase antes de entrar com o Google.");
+        authElements.setup.hidden = false;
+        return;
+    }
+    authElements.google.disabled = true;
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) {
+        authElements.google.disabled = false;
+        showAuthMessage(formatAuthError(error));
+    }
 }
 
 async function logout() {
@@ -549,7 +603,11 @@ function clearCompleted() {
 }
 
 function persistTasks() {
-    localStorage.setItem("tarefas", JSON.stringify(tasks));
+    localStorage.setItem(storageKey("tarefas"), JSON.stringify(tasks));
+}
+
+function storageKey(name) {
+    return activeUserId ? `${name}:${activeUserId}` : name;
 }
 
 function parseTags(value) {
@@ -719,7 +777,7 @@ function saveTransaction(event) {
     };
     if (!transaction.description || !transaction.amount || transaction.amount < 0) return;
     transactions.push(transaction);
-    localStorage.setItem("financas-pessoais", JSON.stringify(transactions));
+    localStorage.setItem(storageKey("financas-pessoais"), JSON.stringify(transactions));
     closeFinanceModal();
     renderFinance();
     showToast("Lançamento salvo.");
@@ -729,7 +787,7 @@ function deleteTransaction(id) {
     const transaction = transactions.find((item) => String(item.id) === String(id));
     if (!transaction || !confirm(`Excluir “${transaction.description}”?`)) return;
     transactions = transactions.filter((item) => String(item.id) !== String(id));
-    localStorage.setItem("financas-pessoais", JSON.stringify(transactions));
+    localStorage.setItem(storageKey("financas-pessoais"), JSON.stringify(transactions));
     renderFinance();
     showToast("Lançamento excluído.");
 }
@@ -742,7 +800,7 @@ function saveBudget() {
     } else {
         budgets[month] = value;
     }
-    localStorage.setItem("orcamentos-pessoais", JSON.stringify(budgets));
+    localStorage.setItem(storageKey("orcamentos-pessoais"), JSON.stringify(budgets));
     renderFinance();
     showToast("Orçamento atualizado.");
 }
