@@ -86,6 +86,7 @@ const authElements = {
 const supabaseConfig = window.SUPABASE_CONFIG || {};
 const hasSupabaseConfig = Boolean(window.supabase && supabaseConfig.url && supabaseConfig.anonKey && !supabaseConfig.url.startsWith("COLE_"));
 const supabaseClient = hasSupabaseConfig ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey) : null;
+const authRedirectUrl = supabaseConfig.siteUrl || `${window.location.origin}${window.location.pathname}`;
 
 let tasks = loadTasks();
 let transactions = loadTransactions();
@@ -247,7 +248,7 @@ async function handleAuthSubmit(event) {
     const password = authElements.password.value;
     const result = authMode === "login"
         ? await supabaseClient.auth.signInWithPassword({ email, password })
-        : await supabaseClient.auth.signUp({ email, password });
+        : await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: authRedirectUrl } });
     setAuthBusy(false);
     if (result.error) {
         showAuthMessage(formatAuthError(result.error));
@@ -284,7 +285,7 @@ async function sendPasswordReset() {
         authElements.email.focus();
         return;
     }
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: authRedirectUrl });
     showAuthMessage(error ? formatAuthError(error) : "Confira seu e-mail para redefinir a senha.", error ? "" : "success");
 }
 
@@ -317,7 +318,7 @@ async function signInWithGoogle() {
     authElements.google.disabled = true;
     const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin + window.location.pathname }
+        options: { redirectTo: authRedirectUrl }
     });
     if (error) {
         authElements.google.disabled = false;
