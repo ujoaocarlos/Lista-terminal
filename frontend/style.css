@@ -210,6 +210,11 @@ select:focus-visible {
     margin-top: 15px;
 }
 
+.resend-confirmation {
+    display: block;
+    margin: 14px auto 0;
+}
+
 .auth-setup {
     margin-top: 20px;
     padding: 10px;

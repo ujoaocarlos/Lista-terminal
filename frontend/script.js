@@ -78,6 +78,7 @@ const authElements = {
     message: document.getElementById("authMessage"),
     toggle: document.getElementById("toggleAuthMode"),
     forgot: document.getElementById("forgotPassword"),
+    resend: document.getElementById("resendConfirmation"),
     setup: document.getElementById("authSetup"),
     logout: document.getElementById("logoutButton"),
     google: document.getElementById("googleAuth")
@@ -201,6 +202,7 @@ function initializeEvents() {
     authElements.form.addEventListener("submit", handleAuthSubmit);
     authElements.toggle.addEventListener("click", toggleAuthMode);
     authElements.forgot.addEventListener("click", sendPasswordReset);
+    authElements.resend.addEventListener("click", resendConfirmation);
     authElements.google.addEventListener("click", signInWithGoogle);
     authElements.logout.addEventListener("click", logout);
 }
@@ -287,6 +289,25 @@ async function sendPasswordReset() {
     }
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: authRedirectUrl });
     showAuthMessage(error ? formatAuthError(error) : "Confira seu e-mail para redefinir a senha.", error ? "" : "success");
+}
+
+async function resendConfirmation() {
+    if (!supabaseClient) {
+        showAuthMessage("Configure o Supabase antes de reenviar a confirmação.");
+        return;
+    }
+    const email = authElements.email.value.trim();
+    if (!email) {
+        showAuthMessage("Informe seu e-mail para reenviar a confirmação.");
+        authElements.email.focus();
+        return;
+    }
+    const { error } = await supabaseClient.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: authRedirectUrl }
+    });
+    showAuthMessage(error ? formatAuthError(error) : "Novo link enviado. Verifique também a pasta de spam.", error ? "" : "success");
 }
 
 function formatAuthError(error) {
